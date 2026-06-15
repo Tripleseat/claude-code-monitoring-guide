@@ -20,21 +20,31 @@ exporters:
     send_timestamps: true
     metric_expiration: 180m
     enable_open_metrics: true
-    
+
+  otlphttp/jellyfish:
+    endpoint: ${JELLYFISH_OTLP_ENDPOINT}
+    headers:
+      Authorization: "Bearer ${JELLYFISH_TOKEN}"
+
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
   debug:
-    verbosity: detailed
-    sampling_initial: 5
-    sampling_thereafter: 200
+    verbosity: normal
 
 service:
   pipelines:
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [prometheus, debug]
-      
+      exporters: [prometheus, otlphttp/jellyfish, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]
+
   extensions: []
-  
+
   telemetry:
     logs:
       level: "debug"
